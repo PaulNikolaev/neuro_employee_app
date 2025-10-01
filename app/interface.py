@@ -10,19 +10,25 @@ with open("app/data.json", "r", encoding="utf-8") as f:
 # Создаем экземпляр класса GPT с выбранной моделью LLM
 gpt = GPT("gpt-3.5-turbo")
 
+
 def create_interface():
     with gr.Blocks() as demo:
         with gr.Tab("Выбор модели и Промт"):
             # Dropdown выбора модели
             subject = gr.Dropdown(
                 choices=[(m["name"], i) for i, m in enumerate(models)],
-                label="Выбор модели"
+                label="Выбор модели",
+                value=0  # Начальное значение
             )
 
             # Поля для отображения данных модели
             name = gr.Label(value=models[0]['name'], show_label=False)
-            prompt = gr.Textbox(value=re.sub(r'\t+|\s\s+', ' ', models[0]['prompt']),
-                                label="Промт", interactive=True)
+            prompt = gr.Textbox(
+                value=re.sub(r'\t+|\s\s+', ' ', models[0]['prompt']),
+                label="Промт",
+                interactive=True,
+                lines=3
+            )
             query = gr.Textbox(value=models[0]['query'], label="Запрос к LLM", interactive=True)
             link = gr.HTML(value=f"<a target='_blank' href='{models[0]['doc']}'>Документ для обучения</a>")
 
@@ -67,14 +73,12 @@ def create_interface():
                     return f"Ошибка при обучении: {str(e)}"
 
             # Функция запроса к модели
-            def predict(p, q):
+            def predict(prompt_text, query_text):
                 try:
-                    result = gpt.answer_index(p, q)
+                    result = gpt.answer_index(prompt_text, query_text)
 
-                    log_lines = []
-                    for line in gpt.log.splitlines():
-                        if "Токенов" in line or "Ошибка" in line:
-                            log_lines.append(line)
+                    # Выводим только важные строки логов
+                    log_lines = [line for line in gpt.log.splitlines() if "Токенов" in line or "Ошибка" in line]
                     filtered_log = "\n".join(log_lines)
 
                     return [result, filtered_log]

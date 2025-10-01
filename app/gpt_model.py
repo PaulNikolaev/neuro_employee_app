@@ -1,18 +1,16 @@
-import json
 import os
 import re
 import requests
 from openai import OpenAI
 import tiktoken
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.docstore.document import Document
-from langchain.vectorstores import Chroma
+from langchain_community.vectorstores import Chroma
+from dotenv import load_dotenv
 
 # Загружаем переменные окружения
-from dotenv import load_dotenv
 load_dotenv()
-
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
@@ -30,8 +28,7 @@ class GPT:
         match_ = re.search(r'/document/d/([a-zA-Z0-9-_]+)', url)
         if not match_:
             raise ValueError("Неверный Google Docs URL")
-        doc_id = match_.group(1)
-        response = requests.get(f'https://docs.google.com/document/d/{doc_id}/export?format=txt')
+        response = requests.get(f'https://docs.google.com/document/d/{match_.group(1)}/export?format=txt')
         response.raise_for_status()
         text = response.text
         return self.create_embedding(text)
